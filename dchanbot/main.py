@@ -7,10 +7,11 @@ from dotenv import load_dotenv
 from bot import DChanBot
 
 # .envファイルに記述されている環境変数を読み込む
-load_dotenv(verbose=True)
-
 dotenv_path = join(dirname(__file__), '.env')
-load_dotenv(dotenv_path)
+load_dotenv(
+    dotenv_path = dotenv_path,
+    verbose = True
+)
 
 def main() -> int:
     # ボット起動
