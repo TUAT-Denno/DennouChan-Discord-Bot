@@ -22,12 +22,12 @@ class Config:
     # 設定をファイルから読み込む
     def load(self):
         if self._confpath.exists():
-            with self._confpath.open(mode="r") as f:
+            with self._confpath.open(mode="r", encoding="utf-8") as f:
                 self._confcache = json.load(f)
 
     # 設定をファイルに保存
     def save(self):
-        with self._confpath.open(mode = 'w') as f:
+        with self._confpath.open(mode = 'w', encoding="utf-8") as f:
             json.dump(self._confcachel, f, indent = 4)    
 
     # 指定された設定データの取得
