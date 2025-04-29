@@ -1,5 +1,6 @@
 import logging
 import json
+import copy
 from pathlib import Path
 
 from bot import DChanBot
@@ -20,10 +21,15 @@ class Config:
         self._confcache = {}    # 設定データのメモリキャッシュ
 
     # 設定をファイルから読み込む
-    def load(self):
+    def load(self, initconf : dict = None):
         if self._confpath.exists():
             with self._confpath.open(mode="r", encoding="utf-8") as f:
                 self._confcache = json.load(f)
+        else:
+            initconf_ = initconf or {}
+            with self._confpath.open(mode="w", encoding="utf-8") as f:
+                json.dump(initconf_, f, indent = 4)
+            self._confcache = copy.deepcopy(initconf_)
 
     # 設定をファイルに保存
     def save(self):
