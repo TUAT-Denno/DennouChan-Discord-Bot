@@ -48,7 +48,7 @@ class DChanBot(discord.AutoShardedBot):
         )
 
     def run(self):
-        token = self._config.get("discord_token", default = "")
+        token = self._config.data.discord_token
         super().run(token = token)
 
     async def close(self):
