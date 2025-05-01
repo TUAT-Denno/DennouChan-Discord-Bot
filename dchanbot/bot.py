@@ -51,6 +51,10 @@ class DChanBot(discord.AutoShardedBot):
         token = self._config.get("discord_token", default = "")
         super().run(token = token)
 
+    async def close(self):
+        self._confregistory.save_all()  # 設定の保存
+        await super().close()
+
     def register_cog_config(self, conf : Config):
         self._confregistory.register(conf)
 
