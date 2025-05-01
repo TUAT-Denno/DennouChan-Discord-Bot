@@ -4,8 +4,8 @@ from pathlib import Path
 import discord
 from pydantic import BaseModel
 
-from .config import Config
-from .config_registory import ConfigRegistry
+from config import Config
+from config_registory import ConfigRegistry
 
 logger = logging.getLogger("dchanbot.bot")
 
@@ -20,7 +20,7 @@ class DChanBot(discord.AutoShardedBot):
         
         # 設定の読み込み
         self._config = Config(
-            filename= confdir / "dchanbot.json",
+            filename= confdir / Path("dchanbot.json"),
             schema = BotConfig
         )
         self._config.load()

@@ -37,7 +37,7 @@ class SchedNotifier(commands.Cog):
 
         # 設定の読み込み
         self._config = Config(
-            filename = self._bot._confdir / "schednotifier" / "schednotifier.json",
+            filename = self._bot._confdir / Path("schednotifier") / Path("schednotifier.json"),
             schema = SchedCogConfig
         )
         self._config.load()
