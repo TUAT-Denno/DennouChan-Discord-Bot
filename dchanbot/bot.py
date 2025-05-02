@@ -4,8 +4,7 @@ from pathlib import Path
 import discord
 from pydantic import BaseModel
 
-from config import Config
-from config_registory import ConfigRegistry
+from config import Config, ConfigRegistry
 
 logger = logging.getLogger("dchanbot.bot")
 
@@ -14,17 +13,13 @@ class BotConfig(BaseModel):
 
 class DChanBot(discord.AutoShardedBot):
     def __init__(self, confdir : Path):
-        self._confdir = confdir
-
-        self._confregistory = ConfigRegistry()
+        self._confregistory = ConfigRegistry(rootdir = confdir)
         
         # 設定の読み込み
-        self._config = Config(
-            filename= confdir / Path("dchanbot.json"),
-            schema = BotConfig
+        self._config = self._confregistory.load(
+            name = "dchanbot",
+            schema = BotConfig()
         )
-        self._config.load()
-        self.register_cog_config(self._config)
         
         # Botが利用するイベントの設定
         # DChanBotはpresences, members以外に関連した全てのイベントを受け取ることができる
@@ -62,5 +57,6 @@ class DChanBot(discord.AutoShardedBot):
     def _load_cogs(self):
         ret = self.load_extensions(
             "cogs.greeting",
+            "cogs.schednotifier",
             store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
         )
