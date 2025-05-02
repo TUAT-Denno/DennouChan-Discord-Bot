@@ -3,6 +3,7 @@ import sys
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
+from pathlib import Path
 
 from bot import DChanBot
 
@@ -15,7 +16,8 @@ load_dotenv(
 
 def main() -> int:
     # ボット起動
-    bot = DChanBot(confdir = os.environ.get("DBOT_CONFIG_DIR"))
+    confroot_str = os.environ.get("DBOT_CONFIG_DIR")
+    bot = DChanBot(confdir = Path(confroot_str))
     bot.run()   # <- ブロッキングするので必ず最後に呼ぶこと！
 
     return 0
