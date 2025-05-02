@@ -18,7 +18,7 @@ class DChanBot(discord.AutoShardedBot):
         # 設定の読み込み
         self._config = self._confregistory.load(
             name = "dchanbot",
-            schema = BotConfig()
+            schema = BotConfig
         )
         
         # Botが利用するイベントの設定
@@ -55,8 +55,11 @@ class DChanBot(discord.AutoShardedBot):
 
     # Bot実行に必要なモジュール（cogsフォルダの中にあるもの）を読み込む
     def _load_cogs(self):
-        ret = self.load_extensions(
-            "cogs.greeting",
-            "cogs.schednotifier",
-            store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
-        )
+        try:
+            self.load_extensions(
+                "cogs.greeting",
+                "cogs.schednotifier",
+                store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
+            )
+        except Exception as e:
+            print("Error loading extensions")
