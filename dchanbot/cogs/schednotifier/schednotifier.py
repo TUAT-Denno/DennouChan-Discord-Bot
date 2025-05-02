@@ -38,7 +38,7 @@ class SchedNotifier(commands.Cog):
         # 設定の読み込み
         self._config = self._bot._confregistory.load(
             name = "schednotifier",
-            schema = SchedCogConfig(),
+            schema = SchedCogConfig,
             subdir = "schednotifier"
         )
 
@@ -59,7 +59,7 @@ class SchedNotifier(commands.Cog):
         self.notify_today_schedule.start()
         self.notify_tomorrow_schedule.start()
 
-        logger.info("SchedNotifier is now ready.")
+        print("SchedNotifier is now ready.")
 
     #
     # コマンドの実装
