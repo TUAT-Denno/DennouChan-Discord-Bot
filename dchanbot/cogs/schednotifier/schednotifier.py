@@ -36,12 +36,11 @@ class SchedNotifier(commands.Cog):
         self._bot = bot
 
         # 設定の読み込み
-        self._config = Config(
-            filename = self._bot._confdir / Path("schednotifier") / Path("schednotifier.json"),
-            schema = SchedCogConfig
+        self._config = self._bot._confregistory.load(
+            name = "schednotifier",
+            schema = SchedCogConfig(),
+            subdir = "schednotifier"
         )
-        self._config.load()
-        self._bot.register_cog_config(self._config)
 
         # Calendar APIを叩く準備
         clisecret_path = self._config.data.client_secret_path
