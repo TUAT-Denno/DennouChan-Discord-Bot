@@ -42,22 +42,30 @@ class Config(Generic[_T]):
 
 
 class ConfigRegistry:
-    def __init__(self):
-        self._configs: list[Config[Any]] = []
+    def __init__(self, rootdir : Path):
+        rootdir.mkdir(parents = True, exist_ok = True)
+        self._rootdir = rootdir
 
-    def register(self, config: Config[Any]):
-        self._configs.append(config)
+        self._configs: dict[str, Config[Any]] = {}
 
     def save_all(self):
-        for config in self._configs:
+        for config in self._configs.values():
             try:
                 config.save()
             except Exception as e:
                 print(f"Failed to save {config.path}: {e}")
 
-    def load_all(self):
-        for config in self._configs:
-            try:
-                config.load()
-            except Exception as e:
-                print(f"Failed to load {config.path}: {e}")
+    def load(self, name : str, schema : Type[_T], subdir : Path = None) -> Config[_T]:
+        if name in self._configs.keys():
+            return self._configs[name]
+
+        # まだロードされていない場合は、ファイルから読み込む
+        confpath = self._rootdir / (subdir if subdir is not None else "") / Path(f"{name}.json")
+        config = Config(
+            filename = confpath,
+            schema = schema
+        )
+        config.load()
+        self._configs[name] = config
+
+        return config
