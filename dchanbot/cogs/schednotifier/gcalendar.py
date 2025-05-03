@@ -114,4 +114,4 @@ class GCalenderClient:
             dtutc = time.astimezone(ZoneInfo("UTC"))
         
         # Google APIは末尾が"Z"のものをUTC時刻として処理する
-        return dtutc.isoformat() + 'Z'
+        return dtutc.strftime('%Y-%m-%dT%H:%M:%SZ')
