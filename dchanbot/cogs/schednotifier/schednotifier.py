@@ -92,6 +92,22 @@ class SchedNotifier(commands.Cog):
         self._set_channel(channel.id, ctx.guild)
         await ctx.respond(f"スケジュールの送信先チャンネルを{channel.name}（ID：{channel.id}）に設定しました。")
 
+    @schedcmds.command(name = "set-this-channel", description = "このチャンネルをスケジュールの投稿先に設定します")
+    async def set_this_channel(
+        self,
+        ctx : discord.ApplicationContext
+    ):
+        if not ctx.author.guild_permissions.administrator:
+            await ctx.respond("管理者専用のコマンドです。", ephemeral = True)
+            return
+        
+        channel = ctx.channel
+        if channel.type not in (discord.ChannelType.text, discord.ChannelType.news, discord.ChannelType.public_thread):
+            await ctx.respond(f"このチャンネルは投稿先に設定できません。\nテキスト・ニュース・公開スレッドにのみ対応しています。")
+
+        self._set_channel(channel.id, ctx.guild)
+        await ctx.respond(f"スケジュールの送信先チャンネルを{channel.name}（ID：{channel.id}）に設定しました。")
+
     @schedcmds.command(name = "today", description = "今日のスケジュールをお知らせします")
     async def notify_today_schedule(
         self,
@@ -164,7 +180,7 @@ class SchedNotifier(commands.Cog):
     #
 
     today_time = time(hour=6, minute=0, tzinfo=ZoneInfo("Asia/Tokyo"))
-    tomorrow_time = time(hour=23, minute=0, tzinfo=ZoneInfo("Asia/Tokyo"))
+    tomorrow_time = time(hour=22, minute=57, tzinfo=ZoneInfo("Asia/Tokyo"))
 
     # 本日のスケジュールを投稿するルーチン
     @tasks.loop(time = today_time)
