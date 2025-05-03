@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo   # from Python 3.9
 from pathlib import Path
-import logging
 from typing import Dict
 
 import discord
 from discord.ext import commands, tasks
+from discord.commands import Option, SlashCommandGroup
 from pydantic import BaseModel
 
 from dchanbot.bot import DChanBot
-from dchanbot.config import Config
 from .gcalendar import GCalenderClient
 
 
@@ -26,14 +26,17 @@ class SchedCogConfig(BaseModel):
 
 logger = logging.getLogger("dchanbot.cogs.schednotifier")
 
-schedcmds = discord.SlashCommandGroup(
-    name = "sched",
-    description = "スケジュール通知関連のコマンドです"
-)
 
 class SchedNotifier(commands.Cog):
+    schedcmds = SlashCommandGroup(
+        name = "sched",
+        description = "スケジュール通知関連のコマンドです"
+    )
+
     def __init__(self, bot : DChanBot):
         self._bot = bot
+
+        print("SchedNotifier is now loaded")
 
         # 設定の読み込み
         self._config = self._bot._confregistory.load(
@@ -56,10 +59,10 @@ class SchedNotifier(commands.Cog):
             return
 
         # 定期実行するルーチンの起動
-        self.notify_today_schedule.start()
-        self.notify_tomorrow_schedule.start()
+        self.loop_notify_today_schedule.start()
+        self.loop_notify_tomorrow_schedule.start()
 
-        print("SchedNotifier is now ready.")
+        print("SchedNotifier is now ready")
 
     #
     # コマンドの実装
@@ -69,27 +72,27 @@ class SchedNotifier(commands.Cog):
     async def set_calendar_id(
         self,
         ctx : discord.ApplicationContext,
-        newid : str = discord.Option(str, required = True, description = "新しいID")
+        newid : Option(str, "新しいID")
     ):
         if not ctx.author.guild_permissions.administrator:
             await ctx.respond("管理者専用のコマンドです。", ephemeral = True)
             return
 
         self._set_calendar_id(newid, ctx.guild)
-        await ctx.respond("カレンダーIDを設定しました。")
+        await ctx.respond(f"カレンダーIDを{newid}に設定しました。")
 
     @schedcmds.command(name = "set-channel", description = "スケジュールの投稿先を設定します")
     async def set_channel(
         self,
         ctx : discord.ApplicationContext,
-        channel : discord.TextChannel = discord.Option(..., description = "送信先テキストチャンネル")
+        channel : Option(discord.TextChannel, description = "送信先テキストチャンネル")
     ):
         if not ctx.author.guild_permissions.administrator:
             await ctx.respond("管理者専用のコマンドです。", ephemeral = True)
             return
 
         self._set_channel(channel.id, ctx.guild)
-        await ctx.respond("スケジュールの送信先チャンネルを設定しました。")
+        await ctx.respond(f"スケジュールの送信先チャンネルを{channel.name}（ID：{channel.id}）に設定しました。")
 
     @schedcmds.command(name = "today", description = "今日のスケジュールをお知らせします")
     async def notify_today_schedule(
@@ -108,6 +111,7 @@ class SchedNotifier(commands.Cog):
             guild_id = ctx.guild.id
         )
         if not events:  # イベントがない
+            await ctx.followup.send("今日の予定は設定されていません")
             return
 
         # 投稿文を作成
@@ -136,6 +140,7 @@ class SchedNotifier(commands.Cog):
             guild_id = ctx.guild.id
         )
         if not events:  # イベントがない
+            await ctx.followup.send("明日の予定は設定されていません")
             return
 
         # 投稿文を作成
@@ -147,12 +152,26 @@ class SchedNotifier(commands.Cog):
 
         await ctx.followup.send(content = msg)
 
+    @commands.Cog.listener()
+    async def on_application_command_error(
+        self,
+        ctx : discord.ApplicationContext,
+        error : discord.DiscordException
+    ):
+        if isinstance(error, commands.NotOwner):
+            await ctx.respond("このコマンドは使用できません")
+        else:
+            raise error
+
     #
     # 定期実行ルーチンの実装
     #
 
+    today_time = time(hour=6, minute=0, tzinfo=ZoneInfo("Asia/Tokyo"))
+    tomorrow_time = time(hour=23, minute=0, tzinfo=ZoneInfo("Asia/Tokyo"))
+
     # 本日のスケジュールを投稿するルーチン
-    @tasks.loop(time=datetime(hour=6, minute=0, tzinfo=ZoneInfo("Asia/Tokyo")))
+    @tasks.loop(time = today_time)
     async def loop_notify_today_schedule(self):
         if self._apiclient.is_enable() is False:
             return
@@ -195,7 +214,7 @@ class SchedNotifier(commands.Cog):
             await channel.send(msg)
 
     # 明日のスケジュールを投稿するルーチン
-    @tasks.loop(time=datetime(hour=23, minute=0, tzinfo=ZoneInfo("Asia/Tokyo")))
+    @tasks.loop(time=tomorrow_time)
     async def loop_notify_tomorrow_schedule(self):
         if self._apiclient.is_enable() is False:
             return
@@ -237,6 +256,9 @@ class SchedNotifier(commands.Cog):
             # 投稿
             await channel.send(msg)
 
+    #
+    # 内部関数
+    #
 
     def _get_events(
         self,
