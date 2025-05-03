@@ -30,7 +30,6 @@ class SchedNotifier(commands.Cog):
     schedcmds = SlashCommandGroup(
         name = "sched",
         description = "スケジュール通知関連のコマンドです",
-        guild_ids = [1174340561776414822]
     )
 
     def __init__(self, bot : DChanBot):
@@ -110,7 +109,7 @@ class SchedNotifier(commands.Cog):
             guild_id = ctx.guild.id
         )
         if not events:  # イベントがない
-            await ctx.followup.send("今日は何もないよ。ゆっくりしよう！")
+            await ctx.followup.send("今日の予定は設定されていません")
             return
 
         # 投稿文を作成
@@ -139,7 +138,7 @@ class SchedNotifier(commands.Cog):
             guild_id = ctx.guild.id
         )
         if not events:  # イベントがない
-            await ctx.followup.send("明日は何もないよ。ゆっくりしよう！")
+            await ctx.followup.send("明日の予定は設定されていません")
             return
 
         # 投稿文を作成
@@ -156,9 +155,9 @@ class SchedNotifier(commands.Cog):
         self, ctx: discord.ApplicationContext, error: discord.DiscordException
     ):
         if isinstance(error, commands.NotOwner):
-            await ctx.respond("You can't use that command!")
+            await ctx.respond("このコマンドは実行できません！")
         else:
-            raise error  # Raise other errors so they aren't ignored
+            raise error # ほかの例外は無視
 
     #
     # 定期実行ルーチンの実装
