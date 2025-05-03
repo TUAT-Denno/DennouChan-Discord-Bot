@@ -34,8 +34,14 @@ class DChanBot(discord.AutoShardedBot):
         print(f"Hello! I'm {self.user.name}!!")
         print(f"ID: {self.user.id}")
 
+        for guild in self.guilds:
+            print(f"Installed in: {guild.name} - {guild.id}")
+
         self._load_cogs()
-        await self._update_presence() 
+
+        await self.sync_commands(force = True)
+
+        await self._update_presence()
 
     async def _update_presence(self):
         await self.change_presence(
@@ -55,11 +61,16 @@ class DChanBot(discord.AutoShardedBot):
 
     # Bot実行に必要なモジュール（cogsフォルダの中にあるもの）を読み込む
     def _load_cogs(self):
-        try:
-            self.load_extensions(
-                "cogs.greeting",
-                "cogs.schednotifier",
-                store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
-            )
-        except Exception as e:
-            print("Error loading extensions")
+        extensions = [
+            'cogs.greeting',
+            'cogs.schednotifier',
+        ]
+
+        for ext in extensions:
+            try:
+                self.load_extension(
+                    name = ext,
+                    store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
+                )
+            except Exception as e:
+                print(f"Error loading extensions: {ext}")

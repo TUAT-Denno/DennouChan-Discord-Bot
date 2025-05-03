@@ -25,6 +25,7 @@ class Config(Generic[_T]):
 
     # 設定をファイルに保存
     def save(self):
+        self._confpath.parent.mkdir(parents = True, exist_ok = True)
         with self._confpath.open(mode = 'w', encoding="utf-8") as f:
             json.dump(self.data.model_dump(), f, indent = 4)
 
@@ -53,7 +54,7 @@ class ConfigRegistry:
             try:
                 config.save()
             except Exception as e:
-                print(f"Failed to save {config.path}: {e}")
+                print(f"Failed to save {config._confpath}: {e}")
 
     def load(self, name : str, schema : Type[_T], subdir : Path = None) -> Config[_T]:
         if name in self._configs.keys():

@@ -34,29 +34,31 @@ class GCalenderClient:
         client_secrets_path : Path
     ):
         if self._creds is not None:
-           return
-
+            return
+        
         # 1. すでにリフレッシュトークンを記録したファイルがある場合、
         #    それを読み込む
         if reflesh_token_path.exists():
             self._creds = Credentials.from_authorized_user_file(
-                reflesh_token_path.name, SCOPES
+                filename = str(reflesh_token_path),
+                scopes = SCOPES
             )
-  
+
         # 2. 1で失敗 or ファイルがない場合、認証処理を行う
         if not self._creds or not self._creds.valid:
             if self._creds and self._creds.expired and self._creds.refresh_token:
                 self._creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    client_secrets_path.name, SCOPES
+                    client_secrets_file = str(client_secrets_path),
+                    scopes = SCOPES
                 )
                 self._creds = flow.run_local_server(port=0)
 
             # トークンを保存
             with reflesh_token_path.open(mode="w") as token:
                 token.write(self._creds.to_json())
-
+        
     def build(self) -> bool:
         if self._creds is not None:
             self._service = build("calendar", "v3", credentials=self._creds)
@@ -112,4 +114,4 @@ class GCalenderClient:
             dtutc = time.astimezone(ZoneInfo("UTC"))
         
         # Google APIは末尾が"Z"のものをUTC時刻として処理する
-        return dtutc.isoformat() + 'Z'
+        return dtutc.strftime('%Y-%m-%dT%H:%M:%SZ')
