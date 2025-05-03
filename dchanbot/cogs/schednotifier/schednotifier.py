@@ -104,6 +104,7 @@ class SchedNotifier(commands.Cog):
         channel = ctx.channel
         if channel.type not in (discord.ChannelType.text, discord.ChannelType.news, discord.ChannelType.public_thread):
             await ctx.respond(f"このチャンネルは投稿先に設定できません。\nテキスト・ニュース・公開スレッドにのみ対応しています。")
+            return
 
         self._set_channel(channel.id, ctx.guild)
         await ctx.respond(f"スケジュールの送信先チャンネルを{channel.name}（ID：{channel.id}）に設定しました。")
