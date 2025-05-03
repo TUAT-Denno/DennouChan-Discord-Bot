@@ -40,7 +40,8 @@ class GCalenderClient:
         #    それを読み込む
         if reflesh_token_path.exists():
             self._creds = Credentials.from_authorized_user_file(
-                reflesh_token_path.name, SCOPES
+                filename = str(reflesh_token_path),
+                scopes = SCOPES
             )
   
         # 2. 1で失敗 or ファイルがない場合、認証処理を行う
@@ -49,7 +50,8 @@ class GCalenderClient:
                 self._creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    client_secrets_path.name, SCOPES
+                    client_secrets_file = str(client_secrets_path),
+                    scopes = SCOPES
                 )
                 self._creds = flow.run_local_server(port=0)
 
