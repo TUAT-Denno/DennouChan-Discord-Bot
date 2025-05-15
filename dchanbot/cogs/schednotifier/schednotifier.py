@@ -53,10 +53,11 @@ class SchedNotifier(commands.Cog):
             reflesh_token_path = Path(reftoken_path),
             client_secrets_path = Path(clisecret_path)
         )
+
         if self._apiclient.build() is False:
             logger.critical("Failed to build Calendar API client")
             return
-        
+
         self.loop_notify_today_schedule.start()
         self.loop_notify_tomorrow_schedule.start()
 
@@ -305,7 +306,7 @@ class SchedNotifier(commands.Cog):
         time : datetime,
         istoday : bool
     ) -> str:
-        weekdays_ja = ['日', '月', '火', '水', '木', '金', '土']
+        weekdays_ja = ['月', '火', '水', '木', '金', '土', '日']
         msg = "## {} {}の予定\n".format(
             "今日" if istoday else "明日",
             time.strftime("%Y/%m/%d") + f"（{weekdays_ja[time.weekday()]}）"
