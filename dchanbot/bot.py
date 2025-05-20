@@ -26,8 +26,6 @@ class DChanBot(discord.AutoShardedBot):
         intents = discord.Intents.default()
         intents.message_content = True
 
-        self._load_cogs()
-
         super().__init__(intents = intents)
 
         print("Starting bot...")
@@ -49,6 +47,8 @@ class DChanBot(discord.AutoShardedBot):
         )
 
     def run(self):
+        self._load_cogs()
+
         token = self._config.data.discord_token
         super().run(token = token)
 
@@ -74,4 +74,4 @@ class DChanBot(discord.AutoShardedBot):
                     store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
                 )
             except Exception as e:
-                print(f"Error loading extensions: {ext}")
+                print(f"Error loading extensions[{ext}]: {e}")
