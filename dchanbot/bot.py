@@ -4,7 +4,7 @@ from pathlib import Path
 import discord
 from pydantic import BaseModel
 
-from config import Config, ConfigRegistry
+from core.file_model_registory import FileModelRegistry
 
 logger = logging.getLogger("dchanbot.bot")
 
@@ -13,7 +13,7 @@ class BotConfig(BaseModel):
 
 class DChanBot(discord.AutoShardedBot):
     def __init__(self, confdir : Path):
-        self._confregistory = ConfigRegistry(rootdir = confdir)
+        self._confregistory = FileModelRegistry(rootdir = confdir)
         
         # 設定の読み込み
         self._config = self._confregistory.load(
@@ -56,15 +56,11 @@ class DChanBot(discord.AutoShardedBot):
         self._confregistory.save_all()  # 設定の保存
         await super().close()
 
-    def register_cog_config(self, conf : Config):
-        self._confregistory.register(conf)
-
     # Bot実行に必要なモジュール（cogsフォルダの中にあるもの）を読み込む
     def _load_cogs(self):
         extensions = [
             'cogs.greeting',
             'cogs.schednotifier',
-            'cogs.chat'
         ]
 
         for ext in extensions:
