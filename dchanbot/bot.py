@@ -12,15 +12,16 @@ class BotConfig(BaseModel):
     discord_token : str = "SET_YOUR_DISCORD_BOT_TOKEN_HERE",
 
 class DChanBot(discord.AutoShardedBot):
-    def __init__(self, confdir : Path):
+    def __init__(self, confdir : Path, datadir : Path):
         self._confregistory = FileModelRegistry(rootdir = confdir)
+        self._dataregistory = FileModelRegistry(rootdir = datadir)
         
         # 設定の読み込み
         self._config = self._confregistory.load(
             name = "dchanbot",
             schema = BotConfig
         )
-        
+
         # Botが利用するイベントの設定
         # DChanBotはpresences, members以外に関連した全てのイベントを受け取ることができる
         intents = discord.Intents.default()
@@ -53,7 +54,9 @@ class DChanBot(discord.AutoShardedBot):
         super().run(token = token)
 
     async def close(self):
+        self._dataregistory.save_all()  # データファイルの保存
         self._confregistory.save_all()  # 設定の保存
+
         await super().close()
 
     # Bot実行に必要なモジュール（cogsフォルダの中にあるもの）を読み込む
