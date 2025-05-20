@@ -9,7 +9,7 @@ from config import Config, ConfigRegistry
 logger = logging.getLogger("dchanbot.bot")
 
 class BotConfig(BaseModel):
-    discord_token : str = "SET_YOUR_DISCORD_BOT_TOKEN_HERE"
+    discord_token : str = "SET_YOUR_DISCORD_BOT_TOKEN_HERE",
 
 class DChanBot(discord.AutoShardedBot):
     def __init__(self, confdir : Path):
@@ -26,6 +26,8 @@ class DChanBot(discord.AutoShardedBot):
         intents = discord.Intents.default()
         intents.message_content = True
 
+        self._load_cogs()
+
         super().__init__(intents = intents)
 
         print("Starting bot...")
@@ -36,8 +38,6 @@ class DChanBot(discord.AutoShardedBot):
 
         for guild in self.guilds:
             print(f"Installed in: {guild.name} - {guild.id}")
-
-        self._load_cogs()
 
         await self.sync_commands(force = True)
 
@@ -64,6 +64,7 @@ class DChanBot(discord.AutoShardedBot):
         extensions = [
             'cogs.greeting',
             'cogs.schednotifier',
+            'cogs.chat'
         ]
 
         for ext in extensions:
