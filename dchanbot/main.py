@@ -17,7 +17,11 @@ load_dotenv(
 def main() -> int:
     # ボット起動
     confroot_str = os.environ.get("DBOT_CONFIG_DIR")
-    bot = DChanBot(confdir = Path(confroot_str))
+    dataroot_str = os.environ.get("DBOT_DATA_DIR")
+    bot = DChanBot(
+        confdir = Path(confroot_str),
+        datadir = Path(dataroot_str)
+    )
     bot.run()   # <- ブロッキングするので必ず最後に呼ぶこと！
 
     return 0
