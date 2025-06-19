@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from pathlib import Path
 
 import discord
@@ -54,6 +55,18 @@ class DChanBot(discord.AutoShardedBot):
         super().run(token = token)
 
     async def close(self):
+        print("Shutting down bot...")
+
+        # Cogに終了時の処理をさせる
+        for cog in self.cogs.values():
+            if hasattr(cog, "on_shutdown"):
+                routine = getattr(cog, "on_shutdown")
+                if asyncio.iscoroutinefunction(routine):
+                    #try:
+                        await routine()
+                    #except Exception as e:
+                    #    print(f"{cog.__class__.__name__}.on_shutdown() failed: {e}")
+
         self._dataregistory.save_all()  # データファイルの保存
         self._confregistory.save_all()  # 設定の保存
 
@@ -64,6 +77,7 @@ class DChanBot(discord.AutoShardedBot):
         extensions = [
             'cogs.greeting',
             'cogs.schednotifier',
+            'cogs.chat'
         ]
 
         for ext in extensions:
