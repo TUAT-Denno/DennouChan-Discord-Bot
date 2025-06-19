@@ -18,22 +18,40 @@ from core.json_bound_model import dict_to_json, dict_from_json
 
 
 class ChatStatistic(BaseModel):
+    """Stores chat statistics for a session.
+
+    Attributes:
+        chat_count (int): Total number of chat interactions.
+        tokusage (TokenUsage): Token usage statistics for the session.
+    """
     chat_count : int = 0
     tokusage : TokenUsage = TokenUsage()
 
 
 class ChatInstances:
+    """Manages multiple chatbot sessions with personalized prompts, history, and statistics.
+
+    Responsible for instantiating chat chains using LangChain, handling prompts,
+    session histories, and tracking token usage.
+    """
+
     def __init__(self, api_key : str, data_dir : Path):
+        """Initializes the ChatInstances manager.
+
+        Args:
+            api_key (str): Google API key for Gemini and summarization.
+            data_dir (Path): Path to the root directory where data (history/stats) is stored.
+        """
         self._data_dir = data_dir.resolve()
         self._data_dir.mkdir(parents = True, exist_ok = True)
 
-        # Chat用LLMの準備
+        # Prepare LLM for chat
         self._llm = ChatGoogleGenerativeAI(
             model = "gemini-2.0-flash",
             google_api_key = api_key,
         )
 
-        # 要約の準備
+        # Prepare summarizer
         self._summarizer = Summarizer(
             google_api_key = api_key
         )
@@ -42,11 +60,16 @@ class ChatInstances:
         self._prompts   : Dict[str, ChatPromptTemplate] = {}
         self._histories : Dict[str, ChatHistory] = {}
 
-        # 前回までのChat統計データの読み込み
+        # Load previously saved chat statistics
         stats_path = self._data_dir / "stats.json"
         self._stats = dict_from_json(stats_path, ChatStatistic)
 
     async def create_instance(self, session_id : str):
+        """Creates a chat instance for the given session if it doesn't already exist.
+
+        Args:
+            session_id (str): Unique identifier for the chat session.
+        """
         if session_id in self._runnables.keys():
             return
         
@@ -58,7 +81,7 @@ class ChatInstances:
         prompt = self._init_prompt(session_id)
         await self._init_history(session_id)
 
-        # Runnableの構築
+        # Build a Runnable for the session
         chain = (
             {
                 "input"   : lambda x: x["input"],
@@ -76,6 +99,15 @@ class ChatInstances:
         )
 
     async def chat(self, session_id : str, user_input : str) -> str:
+        """Handles a user message and returns a response from the LLM.
+
+        Args:
+            session_id (str): Session ID for the chat.
+            user_input (str): The user's input message.
+
+        Returns:
+            str: The LLM's response as plain text.
+        """
         if session_id not in self._runnables.keys():
             await self.create_instance(session_id)
 
@@ -93,7 +125,7 @@ class ChatInstances:
                 }
             )
         except Exception as e:
-            # 暫定的処理
+            # Temporary fallback handling...
             return (
                 "内部エラーが発生しました。しばらくしてからもう一度お試しください。\n"
                 f"{e}"
@@ -107,23 +139,37 @@ class ChatInstances:
         return response.content
     
     async def save_all_session(self):
-        # Historyの保存
+        """Flushes all session histories to disk and saves usage statistics."""
+        # Save all in-memory histories to disk
         asyncio.gather(*[
             history.flush_to_db()
             for history in self._histories.values()
         ])
         
-        # Chat統計データの保存
+        # Save session statistics to disk
         stats_path = self._data_dir / "stats.json"
         dict_to_json(self._stats, stats_path)
 
     def get_statistic(self, session_id : str) -> ChatStatistic:
+        """Retrieves chat statistics for a specific session.
+
+        Args:
+            session_id (str): The session ID.
+
+        Returns:
+            ChatStatistic: The chat usage and token data for the session.
+        """
         if session_id in self._stats.keys():
             return self._stats[session_id]
         else:
             return ChatStatistic()
         
     def get_all_token_usage(self) -> TokenUsage:
+        """Aggregates token usage across all chat sessions and summarizer.
+
+        Returns:
+            TokenUsage: Combined input/output/total token counts.
+        """
         all_usages = TokenUsage()
         for stat in self._stats.values():
             all_usages.input_tokens  += stat.tokusage.input_tokens
@@ -139,6 +185,14 @@ class ChatInstances:
         return all_usages
 
     def _init_prompt(self, session_id : str) -> ChatPromptTemplate:
+        """Initializes and caches a personalized prompt template for a session.
+
+        Args:
+            session_id (str): Session identifier.
+
+        Returns:
+            ChatPromptTemplate: A prompt template with character personality.
+        """
         if session_id in self._prompts.keys():
             return self._prompts[session_id]
 
@@ -175,6 +229,11 @@ class ChatInstances:
         return self._prompts[session_id]
     
     async def _init_history(self, session_id : str):
+        """Initializes and loads chat history for the session.
+
+        Args:
+            session_id (str): Session identifier.
+        """
         if session_id in self._histories.keys():
             return self._histories[session_id]
         
@@ -187,4 +246,16 @@ class ChatInstances:
         await self._histories[session_id].load_all_messages()
 
     def _get_session_history(self, session_id : str) -> BaseChatMessageHistory:
+        """Retrieves the chat history object for the given session.
+
+        Args:
+            session_id (str): Session identifier.
+
+        Returns:
+            BaseChatMessageHistory: The chat history handler for this session.
+
+        Note:
+            This method is intended to be called by LangChain's `RunnableWithMessageHistory`
+            to retrieve the correct chat history instance for a session.
+        """
         return self._histories[session_id]

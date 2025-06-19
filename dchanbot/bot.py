@@ -1,3 +1,6 @@
+"""The main module for Dennou-Chan Discord Bot
+"""
+
 import logging
 import asyncio
 from pathlib import Path
@@ -10,21 +13,44 @@ from core.file_model_registory import FileModelRegistry
 logger = logging.getLogger("dchanbot.bot")
 
 class BotConfig(BaseModel):
+    """Configuration schema for DChanBot
+
+    Attribute:
+        discord_token (str): The bot token used for authentication with Discord API
+    """
     discord_token : str = "SET_YOUR_DISCORD_BOT_TOKEN_HERE",
 
 class DChanBot(discord.AutoShardedBot):
+    """The main bot class for Dennou-Chan Discord Bot
+
+    DChanBot is a Discord bot implementation using Pycord's AutoShardedBot.
+    It loads configuration from JSON files, manages bot lifecycle, 
+    and dynamically loads extensions (cogs).
+
+    Attributes:
+        _confregistory (FileModelRegistry): Registry for configuration files.
+        _dataregistory (FileModelRegistry): Registry for persistent data files.
+        _config (BotConfig): Bot configuration object.
+    """
+
     def __init__(self, confdir : Path, datadir : Path):
+        """Initialize the bot.
+
+        Args:
+            confdir (Path): Directory where configuration files are stored.
+            datadir (Path): Directory where runtime data is stored.
+        """
         self._confregistory = FileModelRegistry(rootdir = confdir)
         self._dataregistory = FileModelRegistry(rootdir = datadir)
         
-        # 設定の読み込み
+        # Load configuration
         self._config = self._confregistory.load(
             name = "dchanbot",
             schema = BotConfig
         )
 
-        # Botが利用するイベントの設定
-        # DChanBotはpresences, members以外に関連した全てのイベントを受け取ることができる
+        # Set up bot intents
+        # DChanBot listens to all events except presences and members
         intents = discord.Intents.default()
         intents.message_content = True
 
@@ -33,6 +59,7 @@ class DChanBot(discord.AutoShardedBot):
         print("Starting bot...")
 
     async def on_ready(self):
+        """Event handler for when the bot is ready."""
         print(f"Hello! I'm {self.user.name}!!")
         print(f"ID: {self.user.id}")
 
@@ -44,20 +71,23 @@ class DChanBot(discord.AutoShardedBot):
         await self._update_presence()
 
     async def _update_presence(self):
+        """Updates the bot's presence (status)."""
         await self.change_presence(
             activity = discord.Game(name = '農工ライフ')
         )
 
     def run(self):
+        """Runs the bot after loading all extensions."""
         self._load_cogs()
 
         token = self._config.data.discord_token
         super().run(token = token)
 
     async def close(self):
+        """Gracefully shuts down the bot and saves data/config files."""
         print("Shutting down bot...")
 
-        # Cogに終了時の処理をさせる
+        # Call shutdown hooks in each cog if defined
         for cog in self.cogs.values():
             if hasattr(cog, "on_shutdown"):
                 routine = getattr(cog, "on_shutdown")
@@ -67,13 +97,13 @@ class DChanBot(discord.AutoShardedBot):
                     #except Exception as e:
                     #    print(f"{cog.__class__.__name__}.on_shutdown() failed: {e}")
 
-        self._dataregistory.save_all()  # データファイルの保存
-        self._confregistory.save_all()  # 設定の保存
+        self._dataregistory.save_all()  # Save runtime data files
+        self._confregistory.save_all()  # Save configuration files
 
         await super().close()
 
-    # Bot実行に必要なモジュール（cogsフォルダの中にあるもの）を読み込む
     def _load_cogs(self):
+        """Loads required cogs (extensions) for bot functionality."""
         extensions = [
             'cogs.schednotifier',
             'cogs.chat'
@@ -83,7 +113,7 @@ class DChanBot(discord.AutoShardedBot):
             try:
                 self.load_extension(
                     name = ext,
-                    store = True    # store=Trueとすると、ロードエラー時にクリティカルになる
+                    store = True    # If store=True, failure to load raises a critical error
                 )
             except Exception as e:
                 print(f"Error loading extensions[{ext}]: {e}")
