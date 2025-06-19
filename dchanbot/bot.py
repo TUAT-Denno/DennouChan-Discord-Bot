@@ -75,7 +75,6 @@ class DChanBot(discord.AutoShardedBot):
     # Bot実行に必要なモジュール（cogsフォルダの中にあるもの）を読み込む
     def _load_cogs(self):
         extensions = [
-            'cogs.greeting',
             'cogs.schednotifier',
             'cogs.chat'
         ]
