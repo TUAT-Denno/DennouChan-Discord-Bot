@@ -2,6 +2,10 @@
 config/
 settings/
 
+# Data
+data/
+save/
+
 # Environments
 .env
 .venv
@@ -10,6 +14,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Sphinx build directory
+docs/build/
 
 # Python cache
 __pycache__/
