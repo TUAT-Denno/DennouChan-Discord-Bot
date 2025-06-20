@@ -129,7 +129,7 @@ class ChatHistory(BaseChatMessageHistory):
                         timestamp,
                     )
                 )
-                await db.commit()
+            await db.commit()
 
         await self.summarize_if_necessary()
     
