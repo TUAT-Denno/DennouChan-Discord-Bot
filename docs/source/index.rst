@@ -15,3 +15,4 @@
    cog_usage/chat
    cog_usage/schednotifier
    developers_guides/architecture
+   developers_guides/code/modules
