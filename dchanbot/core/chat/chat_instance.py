@@ -141,7 +141,7 @@ class ChatInstances:
     async def save_all_session(self):
         """Flushes all session histories to disk and saves usage statistics."""
         # Save all in-memory histories to disk
-        asyncio.gather(*[
+        await asyncio.gather(*[
             history.flush_to_db()
             for history in self._histories.values()
         ])
