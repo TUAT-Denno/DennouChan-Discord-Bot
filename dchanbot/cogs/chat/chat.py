@@ -74,7 +74,7 @@ class CharChat(commands.Cog):
            message.type != discord.MessageType.reply):
             return
 
-        # Respond if bot is mentioned
+        # Respond if bot is mentioned OR in DM channel
         if (
             message.channel.type == discord.ChannelType.private
             or self._bot.user.mentioned_in(message)
