@@ -86,7 +86,7 @@ class CharChat(commands.Cog):
 
                 await message.channel.send(
                     content = response,
-                    reference = message
+                    reference = message if message.channel.type != discord.ChannelType.private else None
                 )
 
     async def on_shutdown(self):
