@@ -75,7 +75,10 @@ class CharChat(commands.Cog):
             return
 
         # Respond if bot is mentioned
-        if self._bot.user.mentioned_in(message):
+        if (
+            message.channel.type == discord.ChannelType.private
+            or self._bot.user.mentioned_in(message)
+        ):
             async with message.channel.typing():
                 session_id = self._get_session_id(message)
 
