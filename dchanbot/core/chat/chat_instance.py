@@ -157,7 +157,7 @@ class ChatInstances:
         stats_path = self._data_dir / "stats.json"
         dict_to_json(self._stats, stats_path)
 
-    async def _flush_and_summarize(history : ChatHistory):
+    async def _flush_and_summarize(self, history : ChatHistory):
         """Flushes the chat history to disk and performs summarization if needed.
 
         Args:
