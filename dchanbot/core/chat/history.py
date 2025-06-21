@@ -135,7 +135,7 @@ class ChatHistory(BaseChatMessageHistory):
                         )
                     )
                 await db.commit()
-    
+
     async def _ensure_db(self):
         """Ensures that the database and table exist, creating them if needed."""
         if  self._db_initialized:

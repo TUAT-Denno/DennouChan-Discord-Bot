@@ -136,19 +136,35 @@ class ChatInstances:
         self._stats[session_id].chat_count += 1
         update_token_usage(self._stats[session_id].tokusage, response)
 
+        await self._histories[session_id].summarize_if_necessary()
+
         return response.content
     
     async def save_all_session(self):
-        """Flushes all session histories to disk and saves usage statistics."""
+        """Flushes and summarizes all active chat histories, then saves usage statistics.
+
+        This method ensures that all in-memory chat histories are written to disk,
+        summaries are updated if necessary, and session statistics are persisted
+        to the designated stats file.
+        """
         # Save all in-memory histories to disk
         await asyncio.gather(*[
-            history.flush_to_db()
+            self._flush_and_summarize(history)
             for history in self._histories.values()
         ])
         
         # Save session statistics to disk
         stats_path = self._data_dir / "stats.json"
         dict_to_json(self._stats, stats_path)
+
+    async def _flush_and_summarize(history : ChatHistory):
+        """Flushes the chat history to disk and performs summarization if needed.
+
+        Args:
+            history (ChatHistory): The chat history instance to be saved and summarized.
+        """
+        await history.flush_to_db()
+        await history.summarize_if_necessary()
 
     def get_statistic(self, session_id : str) -> ChatStatistic:
         """Retrieves chat statistics for a specific session.
