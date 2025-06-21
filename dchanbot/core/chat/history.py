@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 from pathlib import Path
 from datetime import datetime
@@ -45,6 +46,8 @@ class ChatHistory(BaseChatMessageHistory):
         self._messages : List[BaseMessage] = []
         self._db_initialized = False
 
+        self._db_lock = asyncio.Lock()
+
     @property
     def messages(self) -> List[BaseMessage]:
         """Gets the current in-memory messages.
@@ -84,12 +87,13 @@ class ChatHistory(BaseChatMessageHistory):
 
     async def aclear(self) -> None:
         """Asynchronously clears all messages from both the in-memory cache and the database."""
-        async with aiosqlite.connect(self._db_path) as db:
-            await db.execute(
-                "DELETE FROM chat_history WHERE session_id = ?",
-                (self._session_id,)
-            )
-            await db.commit()
+        async with self._db_lock:
+            async with aiosqlite.connect(self._db_path) as db:
+                await db.execute(
+                    "DELETE FROM chat_history WHERE session_id = ?",
+                    (self._session_id,)
+                )
+                await db.commit()
 
         self._messages.clear()
     
@@ -114,38 +118,40 @@ class ChatHistory(BaseChatMessageHistory):
         """Flushes all in-memory messages to the SQLite database."""
         await self._ensure_db()
 
-        async with aiosqlite.connect(self._db_path) as db:
-            for msg in self._messages:
-                # If the Discord message's timestamp is stored, convert it to a float timestamp
-                ts_raw = msg.additional_kwargs.get("timestamp", 0.0)
-                timestamp = ts_raw.timestamp() if isinstance(ts_raw, datetime) else ts_raw
+        async with self._db_lock:
+            async with aiosqlite.connect(self._db_path) as db:
+                for msg in self._messages:
+                    # If the Discord message's timestamp is stored, convert it to a float timestamp
+                    ts_raw = msg.additional_kwargs.get("timestamp", 0.0)
+                    timestamp = ts_raw.timestamp() if isinstance(ts_raw, datetime) else ts_raw
 
-                await db.execute(
-                    "INSERT INTO chat_history (session_id, role, content, timestamp) VALUES (?, ?, ?, ?)",
-                    (
-                        self._session_id,
-                        "Human" if isinstance(msg, HumanMessage) else "AI",
-                        msg.content,
-                        timestamp,
+                    await db.execute(
+                        "INSERT INTO chat_history (session_id, role, content, timestamp) VALUES (?, ?, ?, ?)",
+                        (
+                            self._session_id,
+                            "Human" if isinstance(msg, HumanMessage) else "AI",
+                            msg.content,
+                            timestamp,
+                        )
                     )
-                )
-            await db.commit()
+                await db.commit()
     
     async def _ensure_db(self):
         """Ensures that the database and table exist, creating them if needed."""
         if  self._db_initialized:
             return
 
-        async with aiosqlite.connect(self._db_path) as db:
-            await db.execute("""
-                CREATE TABLE IF NOT EXISTS chat_history (
-                    session_id TEXT,
-                    role TEXT,
-                    content TEXT,
-                    timestamp REAL
-                )
-            """)
-            await db.commit()
+        async with self._db_lock:
+            async with aiosqlite.connect(self._db_path) as db:
+                await db.execute("""
+                    CREATE TABLE IF NOT EXISTS chat_history (
+                        session_id TEXT,
+                        role TEXT,
+                        content TEXT,
+                        timestamp REAL
+                    )
+                """)
+                await db.commit()
         self._db_initialized = True
 
     async def summarize_if_necessary(self):
@@ -174,22 +180,23 @@ class ChatHistory(BaseChatMessageHistory):
 
             self._messages = [summarized_msg] + recents
 
-            async with aiosqlite.connect(self._db_path) as db:
-                # Delete old messages from the database using their timestamps
-                for msg in olds:
-                    ts_raw = msg.additional_kwargs.get("timestamp", 0.0)
-                    timestamp = ts_raw.timestamp() if isinstance(ts_raw, datetime) else ts_raw
+            async with self._db_lock:
+                async with aiosqlite.connect(self._db_path) as db:
+                    # Delete old messages from the database using their timestamps
+                    for msg in olds:
+                        ts_raw = msg.additional_kwargs.get("timestamp", 0.0)
+                        timestamp = ts_raw.timestamp() if isinstance(ts_raw, datetime) else ts_raw
+                        await db.execute(
+                            "DELETE FROM chat_history WHERE session_id = ? AND timestamp = ?",
+                            (self._session_id, timestamp,)
+                        )
+                    
+                    # Save the summarized message to the database
                     await db.execute(
-                        "DELETE FROM chat_history WHERE session_id = ? AND timestamp = ?",
-                        (self._session_id, timestamp,)
+                        "INSERT INTO chat_history (session_id, role, content, timestamp) VALUES (?, ?, ?, ?)",
+                        (self._session_id, "AI", summarized_msg.content, summary_ts,)
                     )
-                
-                # Save the summarized message to the database
-                await db.execute(
-                    "INSERT INTO chat_history (session_id, role, content, timestamp) VALUES (?, ?, ?, ?)",
-                    (self._session_id, "AI", summarized_msg.content, summary_ts,)
-                )
-                await db.commit()
+                    await db.commit()
 
     async def _summarize_messages(self, messages : List[BaseMessage]) -> str:
         """Summarizes a list of messages using the configured summarizer.
