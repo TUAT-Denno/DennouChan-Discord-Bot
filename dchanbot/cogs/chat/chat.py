@@ -1,7 +1,7 @@
 import logging
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.commands import SlashCommandGroup
 
 from pydantic import BaseModel
@@ -36,6 +36,9 @@ class CharChat(commands.Cog):
             api_key = self._config.data.google_api_key,
             data_dir = self._bot._dataregistory._rootdir / "chat"
         )
+
+        # Start periodic execution routines
+        self.loop_save_chat_sessions.start()
 
     @commands.Cog.listener(name = "on_ready")
     async def on_ready(self):
@@ -92,6 +95,9 @@ class CharChat(commands.Cog):
     async def on_shutdown(self):
         """Called during bot shutdown to persist session data."""
         print("Shutting down Chat Cog...")
+
+        self.loop_save_chat_sessions.stop()
+
         await self._instances.save_all_session()
 
     def _get_session_id(self, message : discord.Message) -> str:
@@ -141,3 +147,18 @@ class CharChat(commands.Cog):
             f"総計：{stat.tokusage.total_tokens}トークン\n"
         )
         await ctx.respond(msg)
+
+
+    #
+    # Implementation of periodic execution routines
+    #
+
+    @tasks.loop(hours = 1)
+    async def loop_save_chat_sessions(self):
+        """Periodically saves all active chat sessions to disk.
+
+        This task runs once every hour to flush and summarize all in-memory
+        chat histories and persist usage statistics. It helps ensure that
+        recent conversation data is not lost in the event of an unexpected shutdown.
+        """
+        await self._instances.save_all_session()
