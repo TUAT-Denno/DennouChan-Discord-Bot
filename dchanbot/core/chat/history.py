@@ -130,8 +130,6 @@ class ChatHistory(BaseChatMessageHistory):
                     )
                 )
             await db.commit()
-
-        await self.summarize_if_necessary()
     
     async def _ensure_db(self):
         """Ensures that the database and table exist, creating them if needed."""
