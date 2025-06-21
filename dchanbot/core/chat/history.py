@@ -154,13 +154,16 @@ class ChatHistory(BaseChatMessageHistory):
                 await db.commit()
         self._db_initialized = True
 
-    async def summarize_if_necessary(self):
+    async def summarize_if_necessary(self) -> bool:
         """Summarizes older messages if the number of old messages exceeds the threshold.
 
         Retains only the most recent messages and a single AI-generated summary.
+
+        Returns:
+            bool: True if summarization was performed, False otherwise.
         """
         if self._summarizer is None:
-            return
+            return False
 
         if len(self._messages) - self._max_recent > self._summarize_threshold:
             # Keep only the most recent `max_recent` messages
@@ -197,6 +200,9 @@ class ChatHistory(BaseChatMessageHistory):
                         (self._session_id, "AI", summarized_msg.content, summary_ts,)
                     )
                     await db.commit()
+            return True
+        
+        return False
 
     async def _summarize_messages(self, messages : List[BaseMessage]) -> str:
         """Summarizes a list of messages using the configured summarizer.
