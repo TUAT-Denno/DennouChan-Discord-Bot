@@ -163,7 +163,7 @@ class ChatHistory(BaseChatMessageHistory):
             # Summarize the remaining older messages
             # Use the current time as the timestamp for the summarized message
             olds = self._messages[:-self._max_recent]
-            summary = await self.summarize_messages(olds)
+            summary = await self._summarize_messages(olds)
             summary_ts = datetime().now().timestamp()
             summarized_msg = AIMessage(
                 content = summary,
@@ -191,7 +191,7 @@ class ChatHistory(BaseChatMessageHistory):
                 )
                 await db.commit()
 
-    async def summarize_messages(self, messages : List[BaseMessage]) -> str:
+    async def _summarize_messages(self, messages : List[BaseMessage]) -> str:
         """Summarizes a list of messages using the configured summarizer.
 
         Args:
