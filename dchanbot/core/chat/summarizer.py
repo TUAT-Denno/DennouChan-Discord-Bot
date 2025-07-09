@@ -34,7 +34,7 @@ class Summarizer:
             "次の内容を要約してください：\n{text}"
         )
 
-        self._chain : Runnable = self._llm | self._prompt
+        self._chain : Runnable = self._prompt | self._llm
 
     async def summarize(self, text : str) -> str:
         """
