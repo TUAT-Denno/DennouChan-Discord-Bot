@@ -18,7 +18,7 @@ class BotConfig(BaseModel):
     Attribute:
         discord_token (str): The bot token used for authentication with Discord API
     """
-    discord_token : str = "SET_YOUR_DISCORD_BOT_TOKEN_HERE",
+    discord_token : str = "SET_YOUR_DISCORD_BOT_TOKEN_HERE"
 
 class DChanBot(discord.AutoShardedBot):
     """The main bot class for Dennou-Chan Discord Bot
@@ -105,8 +105,8 @@ class DChanBot(discord.AutoShardedBot):
     def _load_cogs(self):
         """Loads required cogs (extensions) for bot functionality."""
         extensions = [
-            'cogs.schednotifier',
-            'cogs.chat'
+            #'cogs.schednotifier',
+            #'cogs.chat'
         ]
 
         for ext in extensions:
