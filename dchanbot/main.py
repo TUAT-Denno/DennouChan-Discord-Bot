@@ -5,6 +5,7 @@ variables and passing configuration paths to the bot instance.
 """
 
 import sys
+import logging
 
 import os
 from os.path import join, dirname
@@ -29,6 +30,16 @@ def main() -> int:
     Returns:
         int: Exit status code.
     """
+
+    # Setup logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler("dchanbot.log", encoding="utf-8"),
+        ],
+    )
 
     confroot_str = os.environ.get("DBOT_CONFIG_DIR")
     dataroot_str = os.environ.get("DBOT_DATA_DIR")
