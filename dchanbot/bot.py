@@ -107,6 +107,7 @@ class DChanBot(discord.AutoShardedBot):
         extensions = [
             #'cogs.schednotifier',
             #'cogs.chat'
+            'cogs.acct'
         ]
 
         for ext in extensions:
@@ -115,5 +116,18 @@ class DChanBot(discord.AutoShardedBot):
                     name = ext,
                     store = True    # If store=True, failure to load raises a critical error
                 )
+                logger.info("Loaded extension: %s", ext)
             except Exception as e:
-                print(f"Error loading extensions[{ext}]: {e}")
+                logger.exception("Failed to load extension: %s", ext)
+
+                original = getattr(e, "original", None)
+                if original is not None:
+                    logger.error(
+                        "Original exception while loading %s: %s: %s",
+                        ext,
+                        type(original).__name__,
+                        original,
+                        exc_info=(type(original), original, original.__traceback__),
+                    )
+
+                raise
