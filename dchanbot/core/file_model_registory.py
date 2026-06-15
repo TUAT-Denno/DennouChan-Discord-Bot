@@ -65,7 +65,7 @@ class FileModelRegistry:
         except Exception as e:
             print(f"Failed to save {model._jsonpath}: {e}")
 
-    def load(self, name : str, schema : Type[_T], subdir : Path = None) -> JSONBoundModel[_T]:
+    def load_model(self, name : str, schema : Type[_T], subdir : Path = None) -> JSONBoundModel[_T]:
         """Load a model from file or retrieve a cached instance.
 
         Args:
@@ -88,3 +88,11 @@ class FileModelRegistry:
         self._models[name] = jsonmodel
 
         return jsonmodel
+    
+    def load(self, name : str, schema : Type[_T], subdir : Path = None) -> _T:
+        """Load and return the Pydantic model data."""
+        return self.load_model(
+            name = name,
+            schema = schema,
+            subdir = subdir,
+        ).data
