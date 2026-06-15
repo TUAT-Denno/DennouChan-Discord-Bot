@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from core.file_model_registory import FileModelRegistry
 
-logger = logging.getLogger("dchanbot.bot")
+logger = logging.getLogger(__name__)
 
 class BotConfig(BaseModel):
     """Configuration schema for DChanBot
@@ -56,15 +56,15 @@ class DChanBot(discord.AutoShardedBot):
 
         super().__init__(intents = intents)
 
-        print("Starting bot...")
+        logger.info("Starting bot...")
 
     async def on_ready(self):
         """Event handler for when the bot is ready."""
-        print(f"Hello! I'm {self.user.name}!!")
-        print(f"ID: {self.user.id}")
+        logger.info(f"Hello! I'm {self.user.name}!!")
+        logger.info(f"ID: {self.user.id}")
 
         for guild in self.guilds:
-            print(f"Installed in: {guild.name} - {guild.id}")
+            logger.info(f"Installed in: {guild.name} - {guild.id}")
 
         await self.sync_commands(force = True)
 
@@ -92,7 +92,7 @@ class DChanBot(discord.AutoShardedBot):
 
     async def close(self):
         """Gracefully shuts down the bot and saves data/config files."""
-        print("Shutting down bot...")
+        logger.info("Shutting down bot...")
 
         # Call shutdown hooks in each cog if defined
         for cog in self.cogs.values():
