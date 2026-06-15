@@ -6,6 +6,8 @@ variables and passing configuration paths to the bot instance.
 
 import sys
 import logging
+import asyncio
+import threading
 from logging.handlers import RotatingFileHandler
 
 import os
@@ -46,7 +48,31 @@ def setup_logging():
         force=True,
     )
 
-def main() -> int:
+def console_loop(bot: DChanBot, loop: asyncio.AbstractEventLoop):
+    while True:
+        try:
+            cmd = input("dchanbot > ").strip().lower()
+        except EOFError:
+            return
+        except KeyboardInterrupt:
+            return
+        
+        if cmd in {"shutdown", "quit"}:
+            print("Shutdown requested from console.")
+
+            def schedule_shutdown():
+                asyncio.create_task(bot.close())
+
+            loop.call_soon_threadsafe(schedule_shutdown)
+            return
+        
+        elif cmd == "help":
+            print("Available commands: shutdown, quit, help")
+
+        elif cmd:
+            print(f"Unknown command: {cmd}")
+
+async def async_main() -> int:
     """Main function to initialize and start the bot
 
     Reads configuration and data directory paths from environment variables,
@@ -64,9 +90,25 @@ def main() -> int:
         confdir = Path(confroot_str),
         datadir = Path(dataroot_str)
     )
-    bot.run()   # <- This call blocks until bot shutdown, must be called last!
+
+    loop = asyncio.get_running_loop()
+
+    threading.Thread(
+        target = console_loop,
+        args = (bot, loop),
+        daemon = True,
+    ).start()
+
+    try:
+        await bot.start_async()
+    finally:
+        if not bot.is_closed():
+            await bot.close()
 
     return 0
+
+def main() -> int:
+    return asyncio.run(async_main())
 
 if __name__ == '__main__':
     sys.exit(main())
