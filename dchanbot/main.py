@@ -6,6 +6,7 @@ variables and passing configuration paths to the bot instance.
 
 import sys
 import logging
+from logging.handlers import RotatingFileHandler
 
 import os
 from os.path import join, dirname
@@ -21,6 +22,30 @@ load_dotenv(
     verbose = True
 )
 
+def setup_logging():
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
+    console_handler = logging.StreamHandler(sys.stderr)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+
+    file_handler = RotatingFileHandler(
+        "dchanbot.log",
+        maxBytes = 5 * 1024 * 1024,
+        backupCount = 5,
+        encoding = "utf-8",
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
+    logging.basicConfig(
+        level = logging.INFO,
+        handlers = [console_handler, file_handler],
+        force=True,
+    )
+
 def main() -> int:
     """Main function to initialize and start the bot
 
@@ -31,15 +56,7 @@ def main() -> int:
         int: Exit status code.
     """
 
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler("dchanbot.log", encoding="utf-8"),
-        ],
-    )
+    setup_logging()
 
     confroot_str = os.environ.get("DBOT_CONFIG_DIR")
     dataroot_str = os.environ.get("DBOT_DATA_DIR")
