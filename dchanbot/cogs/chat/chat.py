@@ -33,7 +33,7 @@ class CharChat(commands.Cog):
 
         # Initialize chat instance manager
         self._instances = ChatInstances(
-            api_key = self._config.data.google_api_key,
+            api_key = self._config.google_api_key,
             data_dir = self._bot._dataregistory._rootdir / "chat"
         )
 

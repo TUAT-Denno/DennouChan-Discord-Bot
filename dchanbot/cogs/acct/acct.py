@@ -31,7 +31,7 @@ class Acct(commands.Cog):
 
     @acctcmds.command(name = "form", description = "会計フォームのURLを返します")
     async def form(self, ctx: discord.ApplicationContext):
-        form_url = self._config.data.acct_form_url
+        form_url = self._config.acct_form_url
         if not form_url or form_url == "SET_YOUR_ACCT_FORM_URL_HERE":
             await ctx.respond(
                 "会計フォームURLが未設定です。管理者は `acct.json` の "

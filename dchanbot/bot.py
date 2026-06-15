@@ -80,14 +80,14 @@ class DChanBot(discord.AutoShardedBot):
         """Runs the bot after loading all extensions."""
         self._load_cogs()
 
-        token = self._config.data.discord_token
+        token = self._config.discord_token
         super().run(token = token)
 
     async def start_async(self):
         """Starts the bot with explicit event-loop control."""
         self._load_cogs()
 
-        token = self._config.data.discord_token
+        token = self._config.discord_token
         await super().start(token=token)
 
     async def close(self):

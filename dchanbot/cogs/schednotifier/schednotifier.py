@@ -50,8 +50,8 @@ class SchedNotifier(commands.Cog):
         )
 
         # Prepare Calendar API client
-        clisecret_path = self._config.data.client_secret_path
-        reftoken_path = self._config.data.reflesh_token_path
+        clisecret_path = self._config.client_secret_path
+        reftoken_path = self._config.reflesh_token_path
 
         self._apiclient = GCalenderClient()
         self._apiclient.authorize(
@@ -206,7 +206,7 @@ class SchedNotifier(commands.Cog):
         today = datetime.now(ZoneInfo("Asia/Tokyo"))
         end = today + timedelta(days=1)
 
-        guilds_conf = self._config.data.guilds_conf
+        guilds_conf = self._config.guilds_conf
         for guild_id, conf in guilds_conf.items():
             calendarid = conf.calendar_id
             channelid = conf.channel_id
@@ -246,7 +246,7 @@ class SchedNotifier(commands.Cog):
         tomorrow = datetime.now(ZoneInfo("Asia/Tokyo")) + timedelta(days=1)
         end = tomorrow + timedelta(days=1)
 
-        guilds_conf = self._config.data.guilds_conf
+        guilds_conf = self._config.guilds_conf
         for guild_id, conf in guilds_conf.items():
             calendarid = conf.calendar_id
             channelid = conf.channel_id
@@ -291,7 +291,7 @@ class SchedNotifier(commands.Cog):
         if self._apiclient.is_enable() is False:
             return []
         
-        guilds_conf = self._config.data.guilds_conf
+        guilds_conf = self._config.guilds_conf
         guild_id_str = str(guild_id)
         if guild_id_str not in guilds_conf.keys():
             return []
@@ -348,7 +348,7 @@ class SchedNotifier(commands.Cog):
         if guild is None:
             return
 
-        guilds_conf = self._config.data.guilds_conf
+        guilds_conf = self._config.guilds_conf
         guild_id_str = str(guild.id)
         if guild_id_str in guilds_conf.keys():
             conf = guilds_conf[guild_id_str]
@@ -363,7 +363,7 @@ class SchedNotifier(commands.Cog):
         if guild is None:
             return
         
-        guilds_conf = self._config.data.guilds_conf
+        guilds_conf = self._config.guilds_conf
         guild_id_str = str(guild.id)
         if guild_id_str in guilds_conf.keys():
             conf = guilds_conf[guild_id_str]
