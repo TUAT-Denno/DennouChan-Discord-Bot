@@ -83,6 +83,13 @@ class DChanBot(discord.AutoShardedBot):
         token = self._config.data.discord_token
         super().run(token = token)
 
+    async def start_async(self):
+        """Starts the bot with explicit event-loop control."""
+        self._load_cogs()
+
+        token = self._config.data.discord_token
+        await super().start(token=token)
+
     async def close(self):
         """Gracefully shuts down the bot and saves data/config files."""
         print("Shutting down bot...")
