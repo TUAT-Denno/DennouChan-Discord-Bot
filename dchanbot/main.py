@@ -86,6 +86,11 @@ async def async_main() -> int:
 
     confroot_str = os.environ.get("DBOT_CONFIG_DIR")
     dataroot_str = os.environ.get("DBOT_DATA_DIR")
+    if confroot_str is None:
+        raise RuntimeError("DBOT_CONFIG_DIR is not set")
+    if dataroot_str is None:
+        raise RuntimeError("DBOT_DATA_DIR is not set")
+
     bot = DChanBot(
         confdir = Path(confroot_str),
         datadir = Path(dataroot_str)
