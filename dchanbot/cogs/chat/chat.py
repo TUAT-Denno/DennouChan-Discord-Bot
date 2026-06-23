@@ -10,6 +10,8 @@ from bot import DChanBot
 from core.chat.chat_instance import ChatInstances
 
 
+logger = logging.getLogger(__name__)
+
 class ChatCogConfig(BaseModel):
     """Configuration schema for the Chat Cog"""
     google_api_key : str = "YOUR_GOOGLE_API_KEY"
@@ -20,7 +22,7 @@ class CharChat(commands.Cog):
 
     def __init__(self, bot : DChanBot):
         """Initializes the Chat Cog."""
-        print("Chat Cog is now loaded")
+        logger.info("Chat Cog is now loaded")
 
         self._bot = bot
 
@@ -43,7 +45,7 @@ class CharChat(commands.Cog):
     @commands.Cog.listener(name = "on_ready")
     async def on_ready(self):
         """Triggered when the bot is fully ready."""
-        print("Chat Cog is now ready")
+        logger.info("Chat Cog is now ready")
 
     @commands.Cog.listener(name = "on_message")
     async def on_message(self, message : discord.Message):
@@ -94,7 +96,7 @@ class CharChat(commands.Cog):
 
     async def on_shutdown(self):
         """Called during bot shutdown to persist session data."""
-        print("Shutting down Chat Cog...")
+        logger.info("Shutting down Chat Cog...")
 
         self.loop_save_chat_sessions.stop()
 
