@@ -6,8 +6,10 @@ from discord.commands import SlashCommandGroup
 
 from pydantic import BaseModel
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from bot import DChanBot
-from core.chat.chat_instance import ChatInstances
+from core.chat.chat_instance import ChatInstance, ChatRequest, ChatResponse
 
 
 logger = logging.getLogger(__name__)
@@ -33,14 +35,17 @@ class CharChat(commands.Cog):
             subdir = "chat"
         )
 
-        # Initialize chat instance manager
-        self._instances = ChatInstances(
-            api_key = self._config.google_api_key,
-            data_dir = self._bot._dataregistory._rootdir / "chat"
+        # Prepare LLM for chat
+        self._llm = ChatGoogleGenerativeAI(
+            model = "gemini-3.5-flash",
+            api_key = self._config.google_api_key
         )
 
+        # Initialize chat instance manager
+        self._instances = ChatInstance(model = self._llm)
+
         # Start periodic execution routines
-        self.loop_save_chat_sessions.start()
+        # self.loop_save_chat_sessions.start()
 
     @commands.Cog.listener(name = "on_ready")
     async def on_ready(self):
@@ -85,12 +90,14 @@ class CharChat(commands.Cog):
             or self._bot.user.mentioned_in(message)
         ):
             async with message.channel.typing():
-                session_id = self._get_session_id(message)
-
-                response = await self._instances.chat(session_id, message.content)
+                # session_id = self._get_session_id(message)
+                req = ChatRequest(
+                    content = message.content
+                )
+                response = await self._instances.chat(req)
 
                 await message.channel.send(
-                    content = response,
+                    content = response.content,
                     reference = message if message.channel.type != discord.ChannelType.private else None
                 )
 
@@ -98,9 +105,7 @@ class CharChat(commands.Cog):
         """Called during bot shutdown to persist session data."""
         logger.info("Shutting down Chat Cog...")
 
-        self.loop_save_chat_sessions.stop()
-
-        await self._instances.save_all_session()
+        # self.loop_save_chat_sessions.stop()
 
     def _get_session_id(self, message : discord.Message) -> str:
         """Generates a session ID based on message context.
@@ -135,20 +140,7 @@ class CharChat(commands.Cog):
         Args:
             ctx (discord.ApplicationContext): The command context.
         """
-        if ctx.channel.type is discord.ChannelType.private:
-            session_id = f"session_u{ctx.author.id}"
-        else:
-            session_id = f"session_g{ctx.guild.id}"
-
-        stat = self._instances.get_statistic(session_id)
-        msg = (
-            f"チャット回数：{stat.chat_count}回\n\n"
-            f"トークン使用量\n"
-            f"入力：{stat.tokusage.input_tokens}トークン\n"
-            f"出力：{stat.tokusage.output_tokens}トークン\n"
-            f"総計：{stat.tokusage.total_tokens}トークン\n"
-        )
-        await ctx.respond(msg)
+        pass
 
 
     #
@@ -163,4 +155,4 @@ class CharChat(commands.Cog):
         chat histories and persist usage statistics. It helps ensure that
         recent conversation data is not lost in the event of an unexpected shutdown.
         """
-        await self._instances.save_all_session()
+        pass
