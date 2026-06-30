@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from bot import DChanBot
-from core.chat.chat_instance import ChatInstance, ChatRequest, ChatResponse
+from dchanbot.core.chat.chat_service import ChatService, ChatRequest, ChatResponse
 from core.chat.prompt_manager import PromptManager
 
 
@@ -48,8 +48,8 @@ class CharChat(commands.Cog):
             Path(__file__).parent / "prompts"
         )
 
-        # Initialize chat instance manager
-        self._instances = ChatInstance(
+        # Initialize chat service
+        self._service = ChatService(
             model = self._llm,
             prompt_manager = self._prompt_manager
         )
@@ -104,7 +104,7 @@ class CharChat(commands.Cog):
                 req = ChatRequest(
                     content = message.content
                 )
-                response = await self._instances.chat(req)
+                response = await self._service.chat(req)
 
                 await message.channel.send(
                     content = response.content,

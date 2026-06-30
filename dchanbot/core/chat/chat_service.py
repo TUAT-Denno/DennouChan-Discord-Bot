@@ -25,7 +25,8 @@ class ChatRequest:
 @dataclass(frozen = True)
 class ChatResponse:
     content: str
-class ChatInstance:
+
+class ChatService:
     def __init__(
         self,
         model: BaseChatModel,
