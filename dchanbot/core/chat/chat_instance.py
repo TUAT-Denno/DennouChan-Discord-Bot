@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChatState(TypedDict):
-    messages: Annotated[list, add_messages]
+    messages: Annotated[list[BaseMessage], add_messages]
 
 @dataclass(frozen = True)
 class ChatRequest:
