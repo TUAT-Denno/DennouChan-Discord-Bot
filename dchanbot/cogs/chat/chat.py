@@ -11,11 +11,33 @@ from pydantic import BaseModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from bot import DChanBot
-from dchanbot.core.chat.chat_service import ChatService, ChatRequest, ChatResponse
+from core.chat.chat_service import ChatService, ChatRequest, ChatResponse, ConversationSource
 from core.chat.prompt_manager import PromptManager
+from core.chat.conversation_repository import InMemoryConversationRepository
 
 
 logger = logging.getLogger(__name__)
+
+
+def build_conversation_id(
+    *,
+    user_id: str,
+    guild_id: str | None,
+    channel_id: str | None,
+) -> str:
+    if guild_id is None:
+        return f"discord:dm:user:{user_id}"
+
+    if channel_id is None:
+        raise ValueError(
+            "channel_id is required for guild conversations"
+        )
+
+    return (
+        f"discord:guild:{guild_id}"
+        f":channel:{channel_id}"
+        f":user:{user_id}"
+    )
 
 class ChatCogConfig(BaseModel):
     """Configuration schema for the Chat Cog"""
@@ -48,14 +70,50 @@ class CharChat(commands.Cog):
             Path(__file__).parent / "prompts"
         )
 
+        self._conversation_repository = (
+            InMemoryConversationRepository()
+        )
+
         # Initialize chat service
         self._service = ChatService(
             model = self._llm,
-            prompt_manager = self._prompt_manager
+            prompt_manager = self._prompt_manager,
+            conversation_repository=self._conversation_repository
         )
 
         # Start periodic execution routines
         # self.loop_save_chat_sessions.start()
+
+    def _create_chat_request(self, message: discord.Message) -> ChatRequest:
+        user_id = str(message.author.id)
+
+        if message.guild is None:
+            return ChatRequest(
+                conversation_id = build_conversation_id(
+                    user_id = user_id,
+                    guild_id = None,
+                    channel_id = None,
+                ),
+                content = message.content,
+                user_id = user_id,
+                source = ConversationSource.DM,
+            )
+
+        guild_id = str(message.guild.id)
+        channel_id = str(message.channel.id)
+
+        return ChatRequest(
+            conversation_id = build_conversation_id(
+                user_id = user_id,
+                guild_id = guild_id,
+                channel_id = channel_id,
+            ),
+            content = message.content,
+            user_id = user_id,
+            source = ConversationSource.GUILD,
+            guild_id = guild_id,
+            channel_id = channel_id,
+        )
 
     @commands.Cog.listener(name = "on_ready")
     async def on_ready(self):
@@ -94,6 +152,31 @@ class CharChat(commands.Cog):
            message.type != discord.MessageType.reply):
             return
 
+        if message.guild is None:
+            request = ChatRequest(
+                conversation_id = build_conversation_id(
+                    user_id = str(message.author.id),
+                    guild_id = None,
+                    channel_id = None,
+                ),
+                content = message.content,
+                user_id = str(message.author.id),
+                source = ConversationSource.DM,
+            )
+        else:
+            request = ChatRequest(
+                conversation_id = build_conversation_id(
+                    user_id = str(message.author.id),
+                    guild_id = str(message.guild.id),
+                    channel_id = str(message.channel.id),
+                ),
+                content = message.content,
+                user_id = str(message.author.id),
+                source = ConversationSource.GUILD,
+                guild_id = str(message.guild.id),
+                channel_id = str(message.channel.id),
+            )
+
         # Respond if bot is mentioned OR in DM channel
         if (
             message.channel.type == discord.ChannelType.private
@@ -101,10 +184,7 @@ class CharChat(commands.Cog):
         ):
             async with message.channel.typing():
                 # session_id = self._get_session_id(message)
-                req = ChatRequest(
-                    content = message.content
-                )
-                response = await self._service.chat(req)
+                response = await self._service.chat(request)
 
                 await message.channel.send(
                     content = response.content,
@@ -116,20 +196,6 @@ class CharChat(commands.Cog):
         logger.info("Shutting down Chat Cog...")
 
         # self.loop_save_chat_sessions.stop()
-
-    def _get_session_id(self, message : discord.Message) -> str:
-        """Generates a session ID based on message context.
-
-        Args:
-            message (discord.Message): The incoming message.
-
-        Returns:
-            str: A session ID string.
-        """
-        if message.channel.type is discord.ChannelType.private:
-            return f"session_u{message.author.id}"
-        else:
-            return f"session_g{message.guild.id}"
 
     #
     # Implementation of commands
