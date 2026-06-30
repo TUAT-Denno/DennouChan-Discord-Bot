@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from dataclasses import dataclass
@@ -81,6 +82,8 @@ class ChatService:
         self._prompt_manager = prompt_manager
         self._conversation_repository = conversation_repository
 
+        self._conversation_locks: dict[str, asyncio.Lock] = {}
+
         graph_builder = StateGraph(ChatState)
 
         # Add nodes
@@ -134,29 +137,44 @@ class ChatService:
 
         return {}
 
+    def _get_conversation_lock(
+        self,
+        conversation_id: str,
+    ) -> asyncio.Lock:
+        lock = self._conversation_locks.get(conversation_id)
+
+        if lock is None:
+            lock = asyncio.Lock()
+            self._conversation_locks[conversation_id] = lock
+
+        return lock
+
     async def chat(self, request : ChatRequest) -> ChatResponse:
-        result = await self._graph.ainvoke(
-            {
-                "conversation_id": request.conversation_id,
-                "request_content": request.content,
-                "messages": [],
-                "new_messages": [],
-            }
-        )
+        lock = self._get_conversation_lock(request.conversation_id)
 
-        message = result["messages"][-1]
-
-        logger.debug(
-            "AI response: type=%s content=%r blocks=%r",
-            type(message).__name__,
-            message.content,
-            message.content_blocks,
-        )
-
-        content = message.text
-        if not isinstance(content, str):
-            raise TypeError(
-                f"Expected string response content, got {type(content).__name__}"
+        async with lock:
+            result = await self._graph.ainvoke(
+                {
+                    "conversation_id": request.conversation_id,
+                    "request_content": request.content,
+                    "messages": [],
+                    "new_messages": [],
+                }
             )
 
-        return ChatResponse(content=content)
+            message = result["messages"][-1]
+
+            logger.debug(
+                "AI response: type=%s content=%r blocks=%r",
+                type(message).__name__,
+                message.content,
+                message.content_blocks,
+            )
+
+            content = message.text
+            if not isinstance(content, str):
+                raise TypeError(
+                    f"Expected string response content, got {type(content).__name__}"
+                )
+
+            return ChatResponse(content=content)
