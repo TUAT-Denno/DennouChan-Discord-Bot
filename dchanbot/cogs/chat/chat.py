@@ -1,5 +1,7 @@
 import logging
 
+from pathlib import Path
+
 import discord
 from discord.ext import commands, tasks
 from discord.commands import SlashCommandGroup
@@ -10,6 +12,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from bot import DChanBot
 from core.chat.chat_instance import ChatInstance, ChatRequest, ChatResponse
+from core.chat.prompt_manager import PromptManager
 
 
 logger = logging.getLogger(__name__)
@@ -41,8 +44,15 @@ class CharChat(commands.Cog):
             api_key = self._config.google_api_key
         )
 
+        self._prompt_manager = PromptManager(
+            Path(__file__).parent / "prompts"
+        )
+
         # Initialize chat instance manager
-        self._instances = ChatInstance(model = self._llm)
+        self._instances = ChatInstance(
+            model = self._llm,
+            prompt_manager = self._prompt_manager
+        )
 
         # Start periodic execution routines
         # self.loop_save_chat_sessions.start()
