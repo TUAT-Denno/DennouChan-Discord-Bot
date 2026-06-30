@@ -11,7 +11,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 
 from core.chat.prompt_manager import PromptManager
-from core.chat.conversation_repository import InMemoryConversationRepository
+from core.chat.repository.conversation_repository import ConversationRepository
 
 
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ class ChatService:
         self,
         model: BaseChatModel,
         prompt_manager: PromptManager,
-        conversation_repository: InMemoryConversationRepository
+        conversation_repository: ConversationRepository
     ):
         self._model = model
         self._prompt_manager = prompt_manager

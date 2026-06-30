@@ -13,7 +13,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from bot import DChanBot
 from core.chat.chat_service import ChatService, ChatRequest, ChatResponse, ConversationSource
 from core.chat.prompt_manager import PromptManager
-from core.chat.conversation_repository import InMemoryConversationRepository
+from core.chat.repository.memory_conversation_repository import InMemoryConversationRepository
 
 
 logger = logging.getLogger(__name__)
